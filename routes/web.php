@@ -10,7 +10,8 @@ Route::get('/', function () {
 });
 Route::get('/article/{articleId}', function (Request $request){
     $article = \App\Models\Article::where('id', $request->articleId)->first();
-    return view('pages.article', ['article'=>$article]);
+    $comments = []; // Запросить из БД
+    return view('pages.article', ['article'=>$article, 'comments'=>$comments]);
 });
 // Показываем форму редактирования статьи
 Route::get('/editArticle/{articleId}', function (Request $request){
@@ -44,6 +45,20 @@ Route::post('/addArticle', function (Request $request){
     $article->save();
     return "Статья успешно добавлена";
 });
+
+
+Route::post('/addComment', function (Request $request){
+    $userId = auth()->user()->getAuthIdentifier();
+    $commentField = $request->comment;
+    $articleId = $request->articleId;
+    $comment = new \App\Models\Comment();
+    $comment->comment = $commentField;
+    $comment->user_id = $userId;
+    $comment->article_id = $articleId;
+    $comment->save();
+    return redirect()->intended('/article/'.$articleId); // Идём на страницу со статьёй и смотрим результат
+})->middleware('auth');
+
 
 Route::get('/dashboard', function () {
     return view('dashboard');
