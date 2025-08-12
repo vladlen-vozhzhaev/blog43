@@ -36,10 +36,16 @@
                     <a class="nav-link disabled">Отключенная</a>
                 </li>
             </ul>
-            <form class="d-flex" role="search">
-                <input class="form-control me-2" type="search" placeholder="Поиск" aria-label="Поиск">
-                <button class="btn btn-outline-success" type="submit">Поиск</button>
-            </form>
+            @auth
+                <a href="{{ route('profile') }}" class="btn btn-primary me-3">{{auth()->user()->name}}</a>
+                <form action="{{ route('logout') }}" method="post">
+                    @csrf
+                    <input type="submit" value="Выйти" class="btn btn-primary">
+                </form>
+            @else
+                <a href="{{ route('register') }}" class="btn btn-primary me-3">Регистрация</a>
+                <a href="{{ route('login') }}" class="btn btn-primary">Войти</a>
+            @endauth
         </div>
     </div>
 </nav>

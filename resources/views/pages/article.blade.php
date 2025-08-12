@@ -22,7 +22,12 @@
             </form>
         </div>
         <div>
-
+            @foreach($comments as $comment)
+                <p>
+                    <strong>{{$comment->username}}</strong><br>
+                    {{$comment->comment}}
+                </p>
+            @endforeach
         </div>
     </div>
 @endsection

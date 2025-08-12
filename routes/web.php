@@ -4,33 +4,10 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    $articles = \App\Models\Article::all();
-    return view('pages.articles', ['articles'=>$articles]);
-});
-Route::get('/article/{articleId}', function (Request $request){
-    $article = \App\Models\Article::where('id', $request->articleId)->first();
-    $comments = []; // Запросить из БД
-    return view('pages.article', ['article'=>$article, 'comments'=>$comments]);
-});
-// Показываем форму редактирования статьи
-Route::get('/editArticle/{articleId}', function (Request $request){
-    $article = \App\Models\Article::where('id', $request->articleId)->first();
-    return view('pages.editArticle', ['article'=>$article]);
-});
-// После нажатия на кнопку сохранить статью, передаём данные из формы
-Route::post('/editArticle', function (Request $request){
-    $articleId = $request->articleId; // Получаем <input name="articleId">
-    $title = $request->title; // Получаем <input name="title">
-    $content = $request->contentField; // Получаем <textarea name="contentField"></textarea>
-    $author = $request->author; // Получаем <input name="author">
-    $article = \App\Models\Article::where('id', $articleId)->first(); // Достаём из БД статью по ID
-    $article->title = $title; // Записываем новое значение
-    $article->content = $content; // Записываем новое значение
-    $article->author = $author; // Записываем новое значение
-    $article->save(); // Сохраняем изменения в БД
-    return redirect()->intended('/article/'.$articleId); // Идём на страницу со статьёй и смотрим результат
-});
+Route::get('/', [\App\Http\Controllers\ArticleController::class, 'showArticles']);
+Route::get('/article/{articleId}', [\App\Http\Controllers\ArticleController::class, 'showArticleById']);
+Route::get('/editArticle/{articleId}', [\App\Http\Controllers\ArticleController::class, 'showEditArticle']);
+Route::post('/editArticle', [\App\Http\Controllers\ArticleController::class, 'editArticle']);
 Route::get('/addArticle', function (){
     return view('pages.addArticle');
 })->middleware('auth');
@@ -46,7 +23,6 @@ Route::post('/addArticle', function (Request $request){
     return "Статья успешно добавлена";
 });
 
-
 Route::post('/addComment', function (Request $request){
     $userId = auth()->user()->getAuthIdentifier();
     $commentField = $request->comment;
@@ -59,15 +35,28 @@ Route::post('/addComment', function (Request $request){
     return redirect()->intended('/article/'.$articleId); // Идём на страницу со статьёй и смотрим результат
 })->middleware('auth');
 
-
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+Route::get('/profile', function (){
+    $user = auth()->user();
+    return view('pages.profile', ['user'=>$user]);
+})->name('profile');
+Route::post('/updateUserAvatar', function (Request $request){
+    $path = \Illuminate\Support\Facades\Storage::disk('public')
+        ->putFile('avatars', $request
+            ->file('userAvatar'));
+    $user = \App\Models\User::where('id', auth()->user()->getAuthIdentifier())->first();
+    $user->avatar = $path;
+    $user->save();
+    return redirect()->intended('/profile');
 });
+
+//Route::get('/dashboard', function () {
+//    return view('dashboard');
+//})->middleware(['auth', 'verified'])->name('dashboard');
+
+//Route::middleware('auth')->group(function () {
+//    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+//    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+//    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+//});
 
 require __DIR__.'/auth.php';
